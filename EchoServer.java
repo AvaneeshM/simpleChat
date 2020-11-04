@@ -24,6 +24,8 @@ public class EchoServer extends AbstractServer
    */
   final public static int DEFAULT_PORT = 5555;
   
+  private static String userLogin;
+  
   //Constructors ****************************************************
   
   /**
@@ -48,8 +50,19 @@ public class EchoServer extends AbstractServer
   public void handleMessageFromClient
     (Object msg, ConnectionToClient client)
   {
-    System.out.println("Message received: " + msg + " from " + client);
-    this.sendToAllClients(msg);
+	  String userID[] = String.valueOf(msg).split(" ");
+
+      if(userID[0].equals("#login") && userID.length > 1) {
+    	  
+          client.setInfo(userLogin, userID[1]);
+          this.sendToAllClients(client.getInfo(userLogin) + " has logged on");
+          System.out.println("Message received: " + msg + " from " + client.getInfo(userLogin));
+          
+      } else {
+    	  
+          System.out.println("Message received: " + msg + " from " + client.getInfo(userLogin));
+          this.sendToAllClients(client.getInfo(userLogin) + "> " + msg);
+      }
   }
     
   /**
@@ -70,6 +83,27 @@ public class EchoServer extends AbstractServer
   {
     System.out.println
       ("Server has stopped listening for connections.");
+  }
+  
+  protected void clientConnected(ConnectionToClient client) {
+	  
+	  System.out.println("Client has connected");
+	  this.sendToAllClients("Client has connected");
+  }
+  
+  synchronized protected void clientDisconnected(
+		    ConnectionToClient client) {
+	  System.out.println("Client has disconnected");
+	  this.sendToAllClients(client.getInfo(userLogin)+" has disconnected");
+	  
+	  
+  }
+
+  synchronized protected void clientException(
+		    ConnectionToClient client, Throwable exception) {
+	  
+	  System.out.println("Client has disconnected");
+	  this.sendToAllClients(client.getInfo(userLogin)+" has disconnected");
   }
   
   //Class methods ***************************************************
@@ -94,11 +128,11 @@ public class EchoServer extends AbstractServer
       port = DEFAULT_PORT; //Set port to 5555
     }
 	
-    EchoServer sv = new EchoServer(port);
+    EchoServer server = new EchoServer(port);
     
     try 
     {
-      sv.listen(); //Start listening for connections
+      server.listen(); //Start listening for connections
     } 
     catch (Exception ex) 
     {
